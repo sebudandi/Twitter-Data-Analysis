@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[36]:
+# In[1]:
 
 
 import json
@@ -35,61 +35,80 @@ class TweetDfExtractor:
     ------
     dataframe
     """
+    
     def __init__(self, tweets_list):
-        
         self.tweets_list = tweets_list
 
     # an example function
     def find_statuses_count(self)->list:
-        statuses_count 
-        
-    def find_full_text(self)->list:
-        text
-       
+        statuses_count = [x['user']['statuses_count'] for x in self.tweets_list]
+        return statuses_count
     
+    def find_full_text(self)->list:
+        text = [x['text'] for x in self.tweets_list]
+        return text 
+       
     def find_sentiments(self, text)->list:
-        
-        return polarity, self.subjectivity
+        polarity = [None for x in self.tweets_list]
+        subjectivity = [None for x in self.tweets_list]
+        return polarity, subjectivity
 
     def find_created_time(self)->list:
-        
+        created_at = [x['created_at'] for x in self.tweets_list]        
         return created_at
-        
-       
-    def find_source(self)->list:
-        source
 
+    def find_source(self)->list:
+        source = [x['source'] for x in self.tweets_list]        
         return source
 
     def find_screen_name(self)->list:
-        screen_name 
+        screen_name = [x['user']['screen_name'] for x in self.tweets_list]
+        return screen_name 
 
     def find_followers_count(self)->list:
-        followers_count 
+        followers_count = [x['user']['followers_count'] for x in self.tweets_list]
+        return followers_count  
 
     def find_friends_count(self)->list:
-        friends_count 
+        friends_count = [x['user']['friends_count'] for x in self.tweets_list]
+        return friends_count  
 
     def is_sensitive(self)->list:
+        is_sensitive = []
         try:
-            is_sensitive = [x['possibly_sensitive'] for x in self.tweets_list]
+            for x in self.tweets_list:
+                if 'retweeted_status' in x and 'possibly_sensitive' in x['retweeted_status']:
+                    is_sensitive.append(x['retweeted_status']['possibly_sensitive'])
+                else:
+                    is_sensitive.append(None)    
+                    
         except KeyError:
             is_sensitive = None
-
+            
         return is_sensitive
 
     def find_favourite_count(self)->list:
-        favourite_count
+        favourite_count = [x['user']['favourites_count'] for x in self.tweets_list]
+        return favourite_count
+        
     
     def find_retweet_count(self)->list:
-        retweet_count 
+        retweet_count = []
+        for x in self.tweets_list:
+            if ('retweeted_status' in x):
+                retweet_count.append(x['retweeted_status']['retweet_count'])
+        return retweet_count
 
     def find_hashtags(self)->list:
-        hashtags 
+        hashtags = [x['entities']['hashtags'] for x in self.tweets_list]
+        return hashtags
 
     def find_mentions(self)->list:
-        mentions  
-
+        mentions = []
+        for x in self.tweets_list:
+            if ('retweeted_status' in x):
+                mentions.append(x['retweeted_status']['entities']['user_mentions'])
+        return mentions
 
     def find_location(self)->list:
         try:
@@ -98,9 +117,11 @@ class TweetDfExtractor:
             location = ''
         
         return location
-
     
-        
+    def find_lang(self)->list:
+        lang = [x['lang'] for x in self.tweets_list]
+        return lang
+
         
     def get_tweet_df(self, save=False)->pd.DataFrame:
         """required column to be generated you should be creative and add more features"""
@@ -123,15 +144,15 @@ class TweetDfExtractor:
         mentions = self.find_mentions()
         location = self.find_location()
         data = zip(created_at, source, text, polarity, subjectivity, lang, fav_count, retweet_count, screen_name, follower_count, friends_count, sensitivity, hashtags, mentions, location)
+        
         df = pd.DataFrame(data=data, columns=columns)
-
+        
         if save:
             df.to_csv('processed_tweet_data.csv', index=False)
             print('File Successfully Saved.!!!')
         
         return df
 
-                
 if __name__ == "__main__":
     # required column to be generated you should be creative and add more features
     columns = ['created_at', 'source', 'original_text','clean_text', 'sentiment','polarity','subjectivity', 'lang', 'favorite_count', 'retweet_count', 
